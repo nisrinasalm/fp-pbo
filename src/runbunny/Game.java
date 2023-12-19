@@ -15,6 +15,8 @@ public class Game extends JPanel implements ActionListener {
     private final Font smallFont = new Font("Arial", Font.BOLD, 14);
     private boolean inGame = false;
     private boolean dying = false;
+    private boolean isPaused = false;
+    private int remainingFood;
 
     private final int BLOCK_SIZE = 24;
     private final int N_BLOCKS = 25;
@@ -130,20 +132,14 @@ public class Game extends JPanel implements ActionListener {
         int i = 0;
         boolean finished = true;
         while (i < N_BLOCKS * N_BLOCKS && finished) {
-            if ((screenData[i]) != 0) {
+            if ((screenData[i] & 16) != 0) {
                 finished = false;
             }
             i++;
         }
         if (finished) {
-            score += 50;
-            if (N_VIRUS < MAX_VIRUS) {
-                N_VIRUS++;
-            }
-            if (currentSpeed < maxSpeed) {
-                currentSpeed++;
-            }
-            initLevel();
+            inGame = false;
+            System.out.println("Congrats! You Win!");
         }
     }
 
@@ -300,8 +296,12 @@ public class Game extends JPanel implements ActionListener {
 
     private void initLevel() {
         int i;
+        remainingFood = 0;
         for (i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
             screenData[i] = levelData[i];
+            if ((screenData[i] & 16) != 0) {
+                remainingFood++;
+            }
         }
         continueLevel();
     }
@@ -339,7 +339,13 @@ public class Game extends JPanel implements ActionListener {
         drawMaze(g2d);
         drawScore(g2d);
         if (inGame) {
-            playGame(g2d);
+        	if (!isPaused) {
+        		playGame(g2d);
+        	} else {
+                String pauseMessage = "Game Paused";
+                g2d.setColor(Color.yellow);
+                g2d.drawString(pauseMessage, 240, 270);
+            }
         } else {
             showIntroScreen(g2d);
         }
@@ -364,8 +370,16 @@ public class Game extends JPanel implements ActionListener {
                     req_dx = 0;
                     req_dy = 1;
                 } else if (key == KeyEvent.VK_ESCAPE && timer.isRunning()) {
-                    inGame = false;
-                } 
+                	isPaused = !isPaused; // Toggle pause state
+                    if (isPaused) {
+                        timer.stop();
+                    } else {
+                        timer.start();
+                    }
+                } else if (key == KeyEvent.VK_R) {
+                    // Tombol R untuk restart game
+                    initGame();
+                }
             } else {
                 if (key == KeyEvent.VK_SPACE) {
                     inGame = true;
